@@ -1,5 +1,5 @@
-# jdejonge
-REST API for J. de Jonge BV
+# jdejonge API
+Custom REST API used for retrieving and mutating data for an Insphire SQL database. 
 
 # config
 
@@ -9,15 +9,15 @@ create config.json file in root of project:
 {
 	"api": {
 		"version"  	: "1.0.0",
-		"name"		: "api-name",
-		"username" 	: "username",
-		"password" 	: "secret",
-	    "port"		: "8080"
+		"name"		: "apiname",
+		"username" 	: "authusername",
+		"password" 	: "authpass",
+		"port"		: "8080"
 	},
 	"mssql": {
 		"user"		: "dbuser",
 		"password"	: "dbpass",
-		"server" 	: "named-server-or-ip",
+		"server" 	: "named-sql-server-or-ip",
 		"database"	: "dbname"
 	}
 }
