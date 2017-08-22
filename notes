@@ -1,0 +1,4 @@
+SQL Server Configuration Manager -->
+SQL Server Network Configuration --> 
+Protocols for SQLEXPRESS -->
+enable TCP/IP / add TCP port 1433 to IPALL

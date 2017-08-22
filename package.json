@@ -1,0 +1,21 @@
+{
+  "name": "jdejong",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "lodash": "^4.17.4",
+    "mssql": "^4.0.4",
+    "passport": "^0.4.0",
+    "passport-http": "^0.3.0",
+    "restify": "5.2.0",
+    "restify-errors": "^5.0.0"
+  }
+}
