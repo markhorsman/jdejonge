@@ -17,10 +17,20 @@ function run() {
 
 function listen() {
 	server = restify.createServer({ name: config.api.name, version: config.api.version });
+
+	server.use(restify.plugins.bodyParser());
 	
 	server.get('/stock/:barcode', function(req, res, next) {
 		basicAuth.authenticate(req, res, next, handlers.getStockItem);
 	 });
+
+	server.get('/customer/:reference', function(req, res, next) {
+		basicAuth.authenticate(req, res, next, handlers.getCustomerContact);
+	 });
+
+	server.put('/stock/status/:itemno', function(req, res, next) {
+		basicAuth.authenticate(req, res, next, handlers.updateStockItemStatus);
+	})
 
 	server.listen(config.api.port, function() {
 	  console.log('%s listening at %s', server.name, server.url);	  

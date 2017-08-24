@@ -13,35 +13,45 @@ const sql_config 	= {
 let dbpool 		= null;
 
 function prepResult(result) {
-	const msg = { result: null, message: null, code: 200 };
+	const data = { code: 200 };
 
 	return new bb(function(resolve, reject) {
 		if (!result || !result.recordset.length) {
-			msg.message 	= 'No records found';
-			msg.code 		= 404;
-			return resolve(msg);	
+			data.message 	= 'Geen resultaat gevonden';
+			data.code 		= 404;
+			return resolve(data);	
 		} 
 		 _.each(result.recordset, function(row) {
-		  	msg.result = row;
-		  	return resolve(msg); 
+		  	return resolve(_.extend(data, row)); 
 		})
 	});
 }
 
-module.exports.connect = function() {
-	return sql.connect(sql_config).then((pool) => { 
-		dbpool = pool; 
-		console.log('connected to database: %s', sql_config.database);
-		return; 
-	});
+module.exports = {
+	findCustomerContactByReference : function(reference) {
+		return dbpool.request()
+	    .input('input_parameter', sql.NVarChar, reference)
+	    .query('SELECT TOP 1 RECID, ACCT, CODE, NAME, ADDRESS1, ADDRESS2, ADDRESS3, ADDRESS4, POSTCODE, TELEPHONE, EMAIL, REFERENCE FROM dbo.CustomerContact WHERE reference = @input_parameter').then(prepResult);
+	},
+	findStockItemByBarcode : function(barcode) {
+		return dbpool.request()
+	    .input('input_parameter', sql.NVarChar, barcode)
+	    .query('SELECT TOP 1 BARCODE, CALCODE, DESC#1 AS DESC1, DESC#2 AS DESC2, DESC#3 AS DESC3, ITEMNO, STATUS, NLCODE FROM dbo.Stock WHERE BARCODE = @input_parameter').then(prepResult);
+	},
+	updateStockItemStatus: function(itemno, status) {
+		return dbpool.request()
+		.input('status', sql.Int, parseInt(status))
+		.input('itemno', sql.NVarChar, itemno)
+		.query('UPDATE dbo.Stock SET STATUS = @status WHERE ITEMNO = @itemno');
+	},
+	connect : function() {
+		return sql.connect(sql_config).then((pool) => { 
+			dbpool = pool; 
+			console.log('connected to database: %s', sql_config.database);
+			return; 
+		});
+	}
 }
-
-module.exports.findStockItemByBarcode = function(barcode) {
-	return dbpool.request()
-    .input('input_parameter', sql.NVarChar, barcode)
-    .query('SELECT TOP 1 BARCODE, CALCODE, DESC#1, DESC#2, DESC#3, ITEMNO, STATUS, NLCODE FROM dbo.Stock where BARCODE = @input_parameter').then(prepResult);
-}
-
 
 sql.on('error', err => {
 	console.log(err);

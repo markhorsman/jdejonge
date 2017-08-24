@@ -38,7 +38,8 @@ module.exports.authenticate = function (req, res, next, callback) {
             return next(err);
         }
         if (!user) {
-            const error = new errors.InvalidCredentialsError("Failed to authenticate.");
+            const error = new errors.InvalidCredentialsError("API Inloggegevens incorrect.");
+            console.log("Failed to authenticate!");
             res.send(error);
             return next();
         }
