@@ -71,8 +71,6 @@ module.exports = {
 		const contno 		= req.body.CONTNO;
 		const estretd 		= req.body.ESTRETD;
 
-		console.log(req.body);
-
 		db.findStockItemByItemno(itemno)
 			.then((stockItem) => {
 				if (!stockItem)
@@ -84,7 +82,8 @@ module.exports = {
 							return respondWithError(res, next,  "Ophalen van contract is mislukt.");
 
 						// calculate ContItem charge and add to Contract totals
-						const charge 	= (stockItem.RATE1 ? stockItem.RATE1 : 0); // TODO: calculate this the right way!!!
+						let charge 		= (stockItem.RATE1 ? stockItem.RATE1 : 0); // TODO: calculate this the right way!!!
+						charge			= charge * qty;	
 						const goods 	= contract.GOODS + charge;
 						const vat 		= (goods * (stockItem.VATRATE / 100));
 						const total 	= goods + vat; 
