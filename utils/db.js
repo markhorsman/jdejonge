@@ -39,9 +39,13 @@ module.exports = {
 	    .query('SELECT TOP 1 RECID, ACCT, CODE, NAME, ADDRESS1, ADDRESS2, ADDRESS3, ADDRESS4, POSTCODE, TELEPHONE, EMAIL, REFERENCE FROM dbo.CustomerContact WHERE reference = @reference').then(prepResult);
 	},
 	findStockItemByItemno : function(itemno) {
+		const stockPrefix 	= 'dbo.Stock.';
+		const ratesPrefix 	= 'dbo.Rates.';
+		const vatRatePrefix = 'dbo.VatRates.';
+
 		return dbpool.request()
 	    .input('itemno', sql.NVarChar, itemno)
-	    .query('SELECT TOP 1 BARCODE, CALCODE, DESC#1 AS DESC1, DESC#2 AS DESC2, DESC#3 AS DESC3, ITEMNO, STATUS, NLCODE FROM dbo.Stock WHERE ITEMNO = @itemno').then(prepResult);
+	    .query('SELECT TOP 1 ' + stockPrefix + 'BARCODE, '+ stockPrefix + 'CALCODE, '+ stockPrefix + 'DESC#1 AS DESC1, '+ stockPrefix + 'DESC#2 AS DESC2, '+ stockPrefix + 'DESC#3 AS DESC3, '+ stockPrefix + 'ITEMNO, '+ stockPrefix + 'STATUS,' + stockPrefix + 'NLCODE, '+ stockPrefix + 'GRPCODE, '+ stockPrefix + 'VATCODE, '+ stockPrefix + 'DEFDEP, '+ stockPrefix + 'NLCC, '+ ratesPrefix + 'CODE, '+ ratesPrefix + 'RATE#1 AS RATE1, '+ ratesPrefix + 'RATE#2 AS RATE2, '+ ratesPrefix + 'RATE#3 AS RATE3, '+ ratesPrefix + 'RATE#4 AS RATE4, '+ vatRatePrefix + 'VATRATE FROM dbo.Stock LEFT JOIN dbo.Rates ON dbo.Stock.ITEMNO = dbo.Rates.ITEMNO LEFT JOIN dbo.VatRates ON dbo.Stock.VATCODE = dbo.VatRates.CODE WHERE '+ stockPrefix + 'ITEMNO = @itemno').then(prepResult);
 	},
 	updateStockItemStatus: function(itemno, status) {
 		return dbpool.request()
@@ -49,11 +53,31 @@ module.exports = {
 		.input('itemno', sql.NVarChar, itemno)
 		.query('UPDATE dbo.Stock SET STATUS = @status WHERE ITEMNO = @itemno');
 	},
-	findLatestContractNumberByACCT: function(acct) {
+	findLatestContractByACCT: function(acct) {
 		return dbpool.request()
 		.input('acct', sql.NVarChar, acct)
-		.query('SELECT TOP 1 CONTNO FROM dbo.Contracts WHERE ACCT = @acct ORDER BY CONTNO DESC')
-		.then((result) => { return (result.recordset.length ? result.recordset[0].CONTNO : null); });
+		.query('SELECT TOP 1 CONTNO, ESTRETD FROM dbo.Contracts WHERE ACCT = @acct ORDER BY CONTNO DESC')
+		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
+	},
+	getContract: function(contno) {
+		return dbpool.request()
+		.input('contno', sql.NVarChar, contno)
+		.query('SELECT TOP 1 GOODS, VAT, TOTAL FROM dbo.Contracts WHERE CONTNO = @contno')
+		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
+	},
+	updateContractTotals: function(contno, goods, vat, total) {
+		return dbpool.request()
+		.input('contno', sql.NVarChar, contno)
+		.input('goods', sql.Decimal(15,2), goods)
+		.input('vat', sql.Decimal(15,2), vat)
+		.input('total', sql.Decimal(15,2), total)
+		.query('UPDATE dbo.Contracts SET GOODS = @goods, VAT = @vat, TOTAL = @total WHERE CONTNO = @contno')
+	},
+	findLatestContItemRow: function(contno) {
+		return dbpool.request()
+		.input('contno', sql.NVarChar, contno)
+		.query('SELECT TOP 1 ROWORDER FROM dbo.ContItems WHERE dbo.ContItems.CONTNO = @contno ORDER BY ROWORDER DESC')
+		.then((result) => { return (result.recordset.length ? result.recordset[0].ROWORDER : null); })
 	},
 	findContItem : function(contno, itemno, acct) {
 		return dbpool.request()
@@ -63,7 +87,7 @@ module.exports = {
 		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct ORDER BY CONTNO DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
-	insertContItem: function(acct, contno, status, qty, stockItem) {
+	insertContItem: function(acct, contno, status, qty, roworder, estretd, charge, stockItem) {
 		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
 
 		return dbpool.request()
@@ -75,50 +99,50 @@ module.exports = {
 		.input('itemdesc', sql.NVarChar, stockItem.DESC1)
 		.input('itemdesc2', sql.NVarChar, stockItem.DESC2)
 		.input('itemdesc3', sql.NVarChar, stockItem.DESC3)
-		.input('subgrp', sql.NVarChar, '')
+		.input('subgrp', sql.NVarChar, stockItem.GRPCODE)
 		.input('discount', sql.Int, 0)
 		.input('insurance', sql.Int, 0)
-		.input('ratecode', sql.NVarChar, '')
+		.input('ratecode', sql.NVarChar, stockItem.CODE)
 		.input('fixrate', sql.Int, 0)
 		.input('fixamt', sql.Int, 0)
 		.input('fixdays', sql.Int, 0)
 		.input('qty', sql.Int, parseInt(qty))
 		.input('tofollow', sql.Int, 0)
-		.input('rate1', sql.Int, 0)
-		.input('rate2', sql.Int, 0)
-		.input('rate3', sql.Int, 0)
-		.input('rate4', sql.Int, 0)
+		.input('rate1', sql.Int, (stockItem.RATE1 ? stockItem.RATE1 : 0)) // rate for 1 day
+		.input('rate2', sql.Int, (stockItem.RATE2 ? stockItem.RATE2 : 0)) // rate for 2 days
+		.input('rate3', sql.Int, (stockItem.RATE3 ? stockItem.RATE3 : 0)) // rate for 1 week
+		.input('rate4', sql.Int, (stockItem.RATE4 ? stockItem.RATE4 : 0)) // rate for additional day
 		.input('rate5', sql.Int, 0)
 		.input('rate6', sql.Int, 0)
 		.input('rate7', sql.Int, 0)
 		.input('rate8', sql.Int, 0)
 		.input('rate9', sql.Int, 0)
 		.input('rate10', sql.Int, 0)
-		.input('vatcode', sql.Int, 0)
+		.input('vatcode', sql.Int, stockItem.VATCODE)
 		.input('spl', sql.Int, 0)
 		.input('status', sql.Int, parseInt(status))
 		.input('qtyretd', sql.Int, 0)
 		.input('invoho', sql.NVarChar, 0)
 		.input('ohrec', sql.NVarChar, '')
-		.input('depot', sql.NVarChar, '')
+		.input('depot', sql.NVarChar, stockItem.DEFDEP)
 		.input('baycode', sql.NVarChar, '')
-		.input('nlcode', sql.NVarChar, '')
-		.input('nlcc', sql.NVarChar, '')
+		.input('nlcode', sql.NVarChar, stockItem.NLCODE)
+		.input('nlcc', sql.NVarChar, stockItem.NLCC)
 		.input('nldept', sql.NVarChar, '')
-		.input('calcode', sql.NVarChar, '')
+		.input('calcode', sql.NVarChar, stockItem.CALCODE)
 		.input('safetype', sql.Int, 0)
 		.input('safemode', sql.Int, 0)
-		.input('deldate', sql.NVarChar, '')
-		.input('deltime', sql.NVarChar, '')
+		.input('deldate', sql.NVarChar, dt)
+		.input('deltime', sql.NVarChar, '00:00')
 		.input('hiredate', sql.NVarChar, dt)
-		.input('hiretime', sql.NVarChar, '')
-		.input('lastinv', sql.NVarChar, '')
+		.input('hiretime', sql.NVarChar, '00:00')
+		.input('lastinv', sql.NVarChar, '') // TODO: find out where we can get this
 		.input('lastinvt', sql.NVarChar, '')
-		.input('estretd', sql.NVarChar, '')
-		.input('estrett', sql.NVarChar, '')
+		.input('estretd', sql.NVarChar, estretd)
+		.input('estrett', sql.NVarChar, '00:00')
 		.input('suspdays', sql.Int, 0)
 		.input('susptotal', sql.Int, 0)
-		.input('docno1', sql.Int, 0)
+		.input('docno1', sql.Int, 0) // TODO: find out if we need these!
 		.input('docno2', sql.Int, 0)
 		.input('docno3', sql.Int, 0)
 		.input('docno4', sql.Int, 0)
@@ -155,8 +179,8 @@ module.exports = {
 		.input('poordno', sql.NVarChar, '')
 		.input('poqty', sql.Int, 0)
 		.input('invdtd', sql.Int, 0)
-		.input('charge', sql.Int, 0)
-		.input('linetot', sql.Int, 0)
+		.input('charge', sql.Int, charge) // calculate using dbo.Rates table and diff DELDATE / ESTRETD fields
+		.input('linetot', sql.Int, charge) // == charge
 		.input('lastino', sql.Int, 0)
 		.input('qppdesc', sql.NVarChar, '')
 		.input('packqty', sql.Int, 0)
@@ -180,10 +204,10 @@ module.exports = {
 		.input('salegroup', sql.Int, 0)
 		.input('cost', sql.Int, 0)
 		.input('exchreason', sql.NVarChar, '')
-		.input('sid', sql.NVarChar, '')
+		.input('sid', sql.NVarChar, moment().format('YYYY-MM-DD HH:mm:ss'))
 		.input('pencilled', sql.Int, 0)
 		.input('resource', sql.Int, 0)
-		.input('roworder', sql.Int, 0)
+		.input('roworder', sql.Int, (roworder ? roworder + 1 : 1))
 		.input('originalitemno', sql.NVarChar, '')
 		.input('originalgroup', sql.NVarChar, '')
 		.input('originaltype', sql.Int, 0)
@@ -201,7 +225,7 @@ module.exports = {
 		.input('exchdocnoto', sql.Int, 0)
 		.input('exchdocdatefrom', sql.NVarChar, '')
 		.input('exchdocdateto', sql.NVarChar, '')
-		.input('includeweight', sql.Int, 0)
+		.input('includeweight', sql.Int, 1)
 		.input('mobiledelivered', sql.Int, 0)
 		.input('mobiledelqty', sql.Int, 0)
 		.input('mobiledelqtyalert', sql.Int, 0)

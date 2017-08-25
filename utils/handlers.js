@@ -1,11 +1,12 @@
-const db = require('./db');
-const errors = require('restify-errors');
+const _			= require("lodash");
+const db 		= require('./db');
+const errors 	= require('restify-errors');
 
 function respondJSON(res, next, msg) {
-	console.log("sending response: %s", JSON.stringify(msg));
-
 	const code = msg.code;
 	delete msg.code;
+
+	console.log("sending response: %s", JSON.stringify(msg));
 
   	res.json(code, msg);
   	next();
@@ -32,10 +33,13 @@ module.exports = {
 	},
 	getCustomerContact : function(req, res, next) {
 		db.findCustomerContactByReference(req.params.reference)
-			.then((json) => { 
-				db.findLatestContractNumberByACCT(json.ACCT).then((contno) => { 
-					json.CONTNO = contno; 
-					respondJSON(res, next, json); 
+			.then((customerContact) => { 
+				return db.findLatestContractByACCT(customerContact.ACCT).then((contract) => { 
+					customerContact.CONTNO 		= null;
+					customerContact.ESTRETD 	= null;
+
+					if (contract) _.extend(customerContact, contract)
+					respondJSON(res, next, customerContact); 
 				})  
 			})
 			.catch((err) => {
@@ -65,24 +69,40 @@ module.exports = {
 		const qty			= req.params.qty;
 		const acct 			= req.body.ACCT;
 		const contno 		= req.body.CONTNO;
+		const estretd 		= req.body.ESTRETD;
+
+		console.log(req.body);
 
 		db.findStockItemByItemno(itemno)
 			.then((stockItem) => {
-				if (!stockItem) {
+				if (!stockItem)
 					return respondWithError(res, next,  "Ophalen van artikel is mislukt.");
-				}
+			
+				return db.findLatestContItemRow(contno).then((roworder) => {
+					return db.getContract(contno).then((contract) => {
+						if (!contract)
+							return respondWithError(res, next,  "Ophalen van contract is mislukt.");
 
-				return db.insertContItem(acct, contno, contstatus, qty, stockItem).then((result) => {
-					if (!result.rowsAffected[0]) return respondWithError(res, next,  "Opslaan van artikel contract item is mislukt.");
+						// calculate ContItem charge and add to Contract totals
+						const charge 	= (stockItem.RATE1 ? stockItem.RATE1 : 0); // TODO: calculate this the right way!!!
+						const goods 	= contract.GOODS + charge;
+						const vat 		= (goods * (stockItem.VATRATE / 100));
+						const total 	= goods + vat; 
 
-					return db.updateStockItemStatus(itemno, stockstatus)
-						.then((result) => { respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] }); })
-						.catch((err) => {
-							console.log(err); 
-							respondWithError(res, next,  "Opslaan van artikel status is mislukt.");
-						} 
-					);
-				
+						return db.insertContItem(acct, contno, contstatus, qty, roworder, estretd, charge, stockItem).then((result) => {
+							if (!result.rowsAffected[0]) return respondWithError(res, next,  "Opslaan van artikel contract item is mislukt.");
+
+							return db.updateContractTotals(contno, goods, vat, total).then((result) => {
+								return db.updateStockItemStatus(itemno, stockstatus)
+									.then((result) => { respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] }); })
+									.catch((err) => {
+										console.log(err); 
+										respondWithError(res, next,  "Opslaan van artikel status is mislukt.");
+									} 
+								);	
+							})
+						})	
+					})	
 				})	
 			})
 			.catch((err) => {
