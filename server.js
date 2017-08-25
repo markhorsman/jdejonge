@@ -20,7 +20,7 @@ function listen() {
 
 	server.use(restify.plugins.bodyParser());
 	
-	server.get('/stock/:barcode', function(req, res, next) {
+	server.get('/stock/:itemno/:contno/:acct', function(req, res, next) {
 		basicAuth.authenticate(req, res, next, handlers.getStockItem);
 	 });
 
@@ -30,6 +30,10 @@ function listen() {
 
 	server.put('/stock/status/:itemno', function(req, res, next) {
 		basicAuth.authenticate(req, res, next, handlers.updateStockItemStatus);
+	})
+
+	server.post('/contitem/:itemno/:contstatus/:stockstatus/:qty', function(req, res, next) {
+		basicAuth.authenticate(req, res, next, handlers.insertContItem);	
 	})
 
 	server.listen(config.api.port, function() {
