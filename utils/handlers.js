@@ -77,21 +77,21 @@ module.exports = {
 					return respondWithError(res, next,  "Ophalen van artikel is mislukt.");
 			
 				return db.findLatestContItemRow(contno).then((roworder) => {
-					// return db.getContract(contno).then((contract) => {
-						// if (!contract)
-							// return respondWithError(res, next,  "Ophalen van contract is mislukt.");
+					return db.getContract(contno).then((contract) => {
+						if (!contract)
+							return respondWithError(res, next,  "Ophalen van contract is mislukt.");
 
 						// calculate ContItem charge and add to Contract totals
-						// let charge 		= (stockItem.RATE1 ? stockItem.RATE1 : 0); // TODO: calculate this the right way!!!
-						// charge			= charge * qty;	
-						// const goods 	= contract.GOODS + charge;
-						// const vat 		= (goods * (stockItem.VATRATE / 100));
-						// const total 	= goods + vat; 
+						let charge 		= (stockItem.RATE1 ? stockItem.RATE1 : 0); // TODO: calculate this the right way!!!
+						charge			= charge * qty;	
+						const goods 	= contract.GOODS + charge;
+						const vat 		= (goods * (stockItem.VATRATE / 100));
+						const total 	= goods + vat; 
 
-						return db.insertContItem(acct, contno, contstatus, qty, roworder, estretd, stockItem).then((result) => {
+						return db.insertContItem(acct, contno, contstatus, qty, roworder, estretd, charge, stockItem).then((result) => {
 							if (!result.rowsAffected[0]) return respondWithError(res, next,  "Opslaan van artikel contract item is mislukt.");
 
-							// return db.updateContractTotals(contno, goods, vat, total).then((result) => {
+							return db.updateContractTotals(contno, goods, vat, total).then((result) => {
 								return db.updateStockItemStatus(itemno, stockstatus)
 									.then((result) => { respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] }); })
 									.catch((err) => {
@@ -99,9 +99,9 @@ module.exports = {
 										respondWithError(res, next,  "Opslaan van artikel status is mislukt.");
 									} 
 								);	
-							// })
+							})
 						})	
-					// })	
+					})	
 				})	
 			})
 			.catch((err) => {

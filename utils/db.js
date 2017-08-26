@@ -87,7 +87,7 @@ module.exports = {
 		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct ORDER BY CONTNO DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
-	insertContItem: function(acct, contno, status, qty, roworder, estretd, stockItem) {
+	insertContItem: function(acct, contno, status, qty, roworder, estretd, charge, stockItem) {
 		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
 
 		return dbpool.request()
@@ -136,7 +136,7 @@ module.exports = {
 		.input('deltime', sql.NVarChar, '00:00')
 		.input('hiredate', sql.NVarChar, dt)
 		.input('hiretime', sql.NVarChar, '00:00')
-		.input('lastinv', sql.NVarChar, '') // TODO: find out where we can get this
+		.input('lastinv', sql.NVarChar, '1899-12-30 00:00:00.000') // TODO: get from some table
 		.input('lastinvt', sql.NVarChar, '')
 		.input('estretd', sql.NVarChar, estretd)
 		.input('estrett', sql.NVarChar, '00:00')
@@ -179,8 +179,8 @@ module.exports = {
 		.input('poordno', sql.NVarChar, '')
 		.input('poqty', sql.Int, 0)
 		.input('invdtd', sql.Int, 0)
-		.input('charge', sql.Int, 0) // calculate using dbo.Rates table and diff DELDATE / ESTRETD fields
-		.input('linetot', sql.Int, 0) // == charge
+		.input('charge', sql.Int, charge) // calculate using dbo.Rates table and diff DELDATE / ESTRETD fields
+		.input('linetot', sql.Int, charge) // == charge
 		.input('lastino', sql.Int, 0)
 		.input('qppdesc', sql.NVarChar, '')
 		.input('packqty', sql.Int, 0)
