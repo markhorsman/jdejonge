@@ -87,7 +87,7 @@ module.exports = {
 		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct ORDER BY CONTNO DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
-	insertContItem: function(acct, contno, status, qty, roworder, estretd, charge, stockItem) {
+	insertContItem: function(acct, contno, status, qty, roworder, estretd, stockItem) {
 		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
 
 		return dbpool.request()
@@ -179,8 +179,8 @@ module.exports = {
 		.input('poordno', sql.NVarChar, '')
 		.input('poqty', sql.Int, 0)
 		.input('invdtd', sql.Int, 0)
-		.input('charge', sql.Int, charge) // calculate using dbo.Rates table and diff DELDATE / ESTRETD fields
-		.input('linetot', sql.Int, charge) // == charge
+		.input('charge', sql.Int, 0) // calculate using dbo.Rates table and diff DELDATE / ESTRETD fields
+		.input('linetot', sql.Int, 0) // == charge
 		.input('lastino', sql.Int, 0)
 		.input('qppdesc', sql.NVarChar, '')
 		.input('packqty', sql.Int, 0)
