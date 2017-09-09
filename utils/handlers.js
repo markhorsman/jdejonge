@@ -85,8 +85,10 @@ module.exports = {
 							return respondWithError(res, next,  "Ophalen van contract is mislukt.");
 
 						const rent_period = getRentPeriod(estretd);
+
+						console.log(rent_period);
 	
-						if (!rent_period || !rent_period.days || rent_period.days < 0)
+						if (typeof rent_period === 'undefined' || typeof rent_period.days === 'undefined' || rent_period.days < 0)
 							return respondWithError(res, next,  "Ongeldige contract periode");
 
 						// calculate ContItem charge and add to Contract totals
@@ -97,7 +99,7 @@ module.exports = {
 
 						console.log('calculated charge: %s', charge);
 
-						return respondWithError(res, next,  "Ophalen van contract is mislukt.");
+						// return respondWithError(res, next,  "Ophalen van contract is mislukt.");
 
 						return db.insertContItem(acct, contno, contstatus, qty, roworder, estretd, charge, stockItem).then((result) => {
 							if (!result.rowsAffected[0]) return respondWithError(res, next,  "Opslaan van artikel contract item is mislukt.");
@@ -123,8 +125,9 @@ module.exports = {
 }
 
 function getRentPeriod(estretd) {
-	const a = moment('2017-03-17 00:00:00.000');
-	const b = moment('2017-08-31 00:00:00.000');
+	const a = moment();
+	// const a = moment('2017-09-09 00:00:00.000');
+	const b = moment('2017-09-09 00:00:00.000');
 
 	return { days:  moment().isoWeekdayCalc(a,b,[1,2,3,4,5]), weeks: b.diff(a, 'week') };
 }
@@ -133,17 +136,10 @@ function calculateRentPriceForPeriod(rent_period, stockItem, qty) {
 	let price, days_remainder_price;
 	const days_remainder = (rent_period.weeks ? rent_period.days - (rent_period.weeks * 5) : 0);
 
-	const rate1 = 3.4;
-	const rate2 = 6.8;
-	const rate3 = 8.5;
-	const rate4 = 1.7;
-
-	// target charge = 112.2
-
-	// const rate1 = (stockItem.RATE1 ? stockItem.RATE1 : 0);
-	// const rate2 = (stockItem.RATE2 ? stockItem.RATE2 : 0);
-	// const rate3 = (stockItem.RATE3 ? stockItem.RATE3 : 0);
-	// const rate4 = (stockItem.RATE4 ? stockItem.RATE4 : 0);
+	const rate1 = (stockItem.RATE1 ? stockItem.RATE1 : 0);
+	const rate2 = (stockItem.RATE2 ? stockItem.RATE2 : 0);
+	const rate3 = (stockItem.RATE3 ? stockItem.RATE3 : 0);
+	const rate4 = (stockItem.RATE4 ? stockItem.RATE4 : 0);
 
 	console.log('days: %s, weeks: %s, days_remainder: %s', rent_period.days, rent_period.weeks, days_remainder);
 	console.log('rate1: %s, rate2: %s, rate3: %s, rate4: %s', rate1, rate2, rate3, rate4);

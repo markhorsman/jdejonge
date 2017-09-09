@@ -45,7 +45,7 @@ module.exports = {
 
 		return dbpool.request()
 	    .input('itemno', sql.NVarChar, itemno)
-	    .query('SELECT TOP 1 ' + stockPrefix + 'BARCODE, '+ stockPrefix + 'CALCODE, '+ stockPrefix + 'DESC#1 AS DESC1, '+ stockPrefix + 'DESC#2 AS DESC2, '+ stockPrefix + 'DESC#3 AS DESC3, '+ stockPrefix + 'ITEMNO, '+ stockPrefix + 'STATUS,' + stockPrefix + 'NLCODE, '+ stockPrefix + 'GRPCODE, '+ stockPrefix + 'VATCODE, '+ stockPrefix + 'DEFDEP, '+ stockPrefix + 'NLCC, '+ ratesPrefix + 'CODE, '+ ratesPrefix + 'RATE#1 AS RATE1, '+ ratesPrefix + 'RATE#2 AS RATE2, '+ ratesPrefix + 'RATE#3 AS RATE3, '+ ratesPrefix + 'RATE#4 AS RATE4, '+ vatRatePrefix + 'VATRATE FROM dbo.Stock LEFT JOIN dbo.Rates ON dbo.Stock.ITEMNO = dbo.Rates.ITEMNO LEFT JOIN dbo.VatRates ON dbo.Stock.VATCODE = dbo.VatRates.CODE WHERE '+ stockPrefix + 'ITEMNO = @itemno').then(prepResult);
+	    .query('SELECT TOP 1 ' + stockPrefix + 'BARCODE, '+ stockPrefix + 'CALCODE, '+ stockPrefix + 'DESC#1 AS DESC1, '+ stockPrefix + 'DESC#2 AS DESC2, '+ stockPrefix + 'DESC#3 AS DESC3, '+ stockPrefix + 'ITEMNO, '+ stockPrefix + 'STATUS,' + stockPrefix + 'NLCODE, '+ stockPrefix + 'GRPCODE, '+ stockPrefix + 'VATCODE, '+ stockPrefix + 'DEFDEP, '+ stockPrefix + 'NLCC, ' + stockPrefix + '[UNIQUE], ' + ratesPrefix + 'CODE, '+ ratesPrefix + 'RATE#1 AS RATE1, '+ ratesPrefix + 'RATE#2 AS RATE2, '+ ratesPrefix + 'RATE#3 AS RATE3, '+ ratesPrefix + 'RATE#4 AS RATE4, '+ vatRatePrefix + 'VATRATE FROM dbo.Stock LEFT JOIN dbo.Rates ON dbo.Stock.ITEMNO = dbo.Rates.ITEMNO LEFT JOIN dbo.VatRates ON dbo.Stock.VATCODE = dbo.VatRates.CODE WHERE '+ stockPrefix + 'ITEMNO = @itemno').then(prepResult);
 	},
 	updateStockItemStatus: function(itemno, status) {
 		return dbpool.request()
@@ -88,7 +88,7 @@ module.exports = {
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
 	// TODO: updateContItem method
-	
+
 	insertContItem: function(acct, contno, status, qty, roworder, estretd, charge, stockItem) {
 		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
 
