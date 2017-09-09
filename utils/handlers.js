@@ -1,6 +1,9 @@
 const _			= require("lodash");
+const moment	= require("moment");
 const db 		= require('./db');
 const errors 	= require('restify-errors');
+
+require('moment-weekday-calc');
 
 function respondJSON(res, next, msg) {
 	const code = msg.code;
@@ -81,12 +84,20 @@ module.exports = {
 						if (!contract)
 							return respondWithError(res, next,  "Ophalen van contract is mislukt.");
 
+						const rent_period = getRentPeriod(estretd);
+	
+						if (!rent_period || !rent_period.days || rent_period.days < 0)
+							return respondWithError(res, next,  "Ongeldige contract periode");
+
 						// calculate ContItem charge and add to Contract totals
-						let charge 		= (stockItem.RATE1 ? stockItem.RATE1 : 0); // TODO: calculate this the right way!!!
-						charge			= charge * qty;	
+						const charge 	= calculateRentPriceForPeriod(rent_period, stockItem, qty);
 						const goods 	= contract.GOODS + charge;
 						const vat 		= (goods * (stockItem.VATRATE / 100));
-						const total 	= goods + vat; 
+						const total 	= goods + vat;
+
+						console.log('calculated charge: %s', charge);
+
+						return respondWithError(res, next,  "Ophalen van contract is mislukt.");
 
 						return db.insertContItem(acct, contno, contstatus, qty, roworder, estretd, charge, stockItem).then((result) => {
 							if (!result.rowsAffected[0]) return respondWithError(res, next,  "Opslaan van artikel contract item is mislukt.");
@@ -109,5 +120,81 @@ module.exports = {
 				respondWithError(res, next) } 
 		);
 	}
+}
+
+function getRentPeriod(estretd) {
+	const a = moment('2017-03-17 00:00:00.000');
+	const b = moment('2017-08-31 00:00:00.000');
+
+	return { days:  moment().isoWeekdayCalc(a,b,[1,2,3,4,5]), weeks: b.diff(a, 'week') };
+}
+
+function calculateRentPriceForPeriod(rent_period, stockItem, qty) {
+	let price, days_remainder_price;
+	const days_remainder = (rent_period.weeks ? rent_period.days - (rent_period.weeks * 5) : 0);
+
+	const rate1 = 3.4;
+	const rate2 = 6.8;
+	const rate3 = 8.5;
+	const rate4 = 1.7;
+
+	// target charge = 112.2
+
+	// const rate1 = (stockItem.RATE1 ? stockItem.RATE1 : 0);
+	// const rate2 = (stockItem.RATE2 ? stockItem.RATE2 : 0);
+	// const rate3 = (stockItem.RATE3 ? stockItem.RATE3 : 0);
+	// const rate4 = (stockItem.RATE4 ? stockItem.RATE4 : 0);
+
+	console.log('days: %s, weeks: %s, days_remainder: %s', rent_period.days, rent_period.weeks, days_remainder);
+	console.log('rate1: %s, rate2: %s, rate3: %s, rate4: %s', rate1, rate2, rate3, rate4);
+
+	if (rent_period.weeks > 0) {
+		switch (days_remainder) {
+			case 0:
+				days_remainder_price = 0;
+			break;
+			case 1:
+				days_remainder_price = rate1;
+			break;
+			case 2:
+				days_remainder_price = days_remainder * rate4;
+			break;
+			case 3:
+				days_remainder_price = days_remainder * rate4; // or rate1 + (2 * rate4)?
+			break;
+			case 4:
+				days_remainder_price = rate1 + (3 * rate4);
+			break;
+			case 5:
+				days_remainder_price = rate3;
+			break;
+		}
+
+		console.log('days_remainder_price: %s', days_remainder_price);
+
+		switch (rent_period.weeks) {
+			case 1:
+				price = rate3 + days_remainder_price;
+			break;
+			default:
+				price = (rate3 * rent_period.weeks) + days_remainder_price;
+			break;
+		}
+	} else {
+		switch (rent_period.days) {
+			case 0:
+			case 1:
+				price = rate1;
+			break;
+			case 2:
+				price = rate2;
+			break;
+			default:
+				price = rate1 + ((rent_period.days - 1) * rate4);
+			break;
+		}
+	}
+
+	return price * qty;
 }
 

@@ -87,6 +87,8 @@ module.exports = {
 		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct ORDER BY CONTNO DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
+	// TODO: updateContItem method
+	
 	insertContItem: function(acct, contno, status, qty, roworder, estretd, charge, stockItem) {
 		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
 
