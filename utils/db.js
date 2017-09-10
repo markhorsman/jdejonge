@@ -117,10 +117,10 @@ module.exports = {
 		.input('fixdays', sql.Int, 0)
 		.input('qty', sql.Int, parseInt(qty))
 		.input('tofollow', sql.Int, 0)
-		.input('rate1', sql.Int, (stockItem.RATE1 ? stockItem.RATE1 : 0)) // rate for 1 day
-		.input('rate2', sql.Int, (stockItem.RATE2 ? stockItem.RATE2 : 0)) // rate for 2 days
-		.input('rate3', sql.Int, (stockItem.RATE3 ? stockItem.RATE3 : 0)) // rate for 1 week
-		.input('rate4', sql.Int, (stockItem.RATE4 ? stockItem.RATE4 : 0)) // rate for additional day
+		.input('rate1', sql.Decimal(15,4), (stockItem.RATE1 ? stockItem.RATE1 : 0)) // rate for 1 day
+		.input('rate2', sql.Decimal(15,4), (stockItem.RATE2 ? stockItem.RATE2 : 0)) // rate for 2 days
+		.input('rate3', sql.Decimal(15,4), (stockItem.RATE3 ? stockItem.RATE3 : 0)) // rate for 1 week
+		.input('rate4', sql.Decimal(15,4), (stockItem.RATE4 ? stockItem.RATE4 : 0)) // rate for additional day
 		.input('rate5', sql.Int, 0)
 		.input('rate6', sql.Int, 0)
 		.input('rate7', sql.Int, 0)
