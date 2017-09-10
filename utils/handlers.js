@@ -158,14 +158,8 @@ function calculateRentPriceForPeriod(rent_period, stockItem, qty) {
 				days_remainder_price = 0;
 			break;
 			case 1:
-				days_remainder_price = rate1;
-			break;
 			case 2:
-				days_remainder_price = days_remainder * rate4;
-			break;
 			case 3:
-				days_remainder_price = days_remainder * rate4; // or rate1 + (2 * rate4)?
-			break;
 			case 4:
 				days_remainder_price = days_remainder * rate4;
 			break;
