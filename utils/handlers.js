@@ -135,8 +135,7 @@ module.exports = {
 
 function getRentPeriod(estretd) {
 	const a = moment();
-	// const a = moment('2017-09-09 00:00:00.000');
-	const b = moment('2017-09-09 00:00:00.000');
+	const b = moment(estretd);
 
 	return { days:  moment().isoWeekdayCalc(a,b,[1,2,3,4,5]), weeks: b.diff(a, 'week') };
 }
