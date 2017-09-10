@@ -57,11 +57,19 @@ module.exports = {
 		    return next();
 		}
 
-		db.updateStockItemStatus(req.params.itemno, req.body.STATUS)
-			.then((result) => { respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] }); })
+		return db.updateStockItemStatus(req.params.itemno, req.body.STATUS)
+			.then((result) => {
+				if (!result || !result.rowsAffected) {
+					return respondWithError(res, next,  "Updated van artikel status is mislukt.");
+				}	
+
+				db.updateContItemStatus(req.params.contno, req.params.itemno, 2).then((result) => {
+					respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] });	
+				})
+			})
 			.catch((err) => {
 				console.log(err); 
-				respondWithError(res, next,  "Updated van artikel status is mislukt.") 
+				respondWithError(res, next,  "Updated van artikel status is mislukt.");
 			} 
 		);
 	},
@@ -73,6 +81,7 @@ module.exports = {
 		const acct 			= req.body.ACCT;
 		const contno 		= req.body.CONTNO;
 		const estretd 		= req.body.ESTRETD;
+		const reference     = req.body.REFERENCE;
 
 		db.findStockItemByItemno(itemno)
 			.then((stockItem) => {
@@ -101,7 +110,7 @@ module.exports = {
 
 						// return respondWithError(res, next,  "Ophalen van contract is mislukt.");
 
-						return db.insertContItem(acct, contno, contstatus, qty, roworder, estretd, charge, stockItem).then((result) => {
+						return db.insertContItem(acct, reference, contno, contstatus, qty, roworder, estretd, charge, stockItem).then((result) => {
 							if (!result.rowsAffected[0]) return respondWithError(res, next,  "Opslaan van artikel contract item is mislukt.");
 
 							return db.updateContractTotals(contno, goods, vat, total).then((result) => {

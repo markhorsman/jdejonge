@@ -28,7 +28,7 @@ function listen() {
 		basicAuth.authenticate(req, res, next, handlers.getCustomerContact);
 	 });
 
-	server.put('/stock/status/:itemno', function(req, res, next) {
+	server.put('/stock/status/:itemno/:contno', function(req, res, next) {
 		basicAuth.authenticate(req, res, next, handlers.updateStockItemStatus);
 	})
 

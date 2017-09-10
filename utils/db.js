@@ -53,6 +53,13 @@ module.exports = {
 		.input('itemno', sql.NVarChar, itemno)
 		.query('UPDATE dbo.Stock SET STATUS = @status WHERE ITEMNO = @itemno');
 	},
+	updateContItemStatus: function(contno, itemno, status) {
+		return dbpool.request()
+		.input('status', sql.Int, parseInt(status))
+		.input('contno', sql.NVarChar, contno)
+		.input('itemno', sql.NVarChar, itemno)
+		.query('UPDATE dbo.ContItems SET STATUS = @status WHERE CONTNO = @contno AND ITEMNO = @itemno');
+	},
 	findLatestContractByACCT: function(acct) {
 		return dbpool.request()
 		.input('acct', sql.NVarChar, acct)
@@ -89,7 +96,7 @@ module.exports = {
 	},
 	// TODO: updateContItem method
 
-	insertContItem: function(acct, contno, status, qty, roworder, estretd, charge, stockItem) {
+	insertContItem: function(acct, reference, contno, status, qty, roworder, estretd, charge, stockItem) {
 		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
 
 		return dbpool.request()
@@ -166,7 +173,7 @@ module.exports = {
 		.input('prtflags', sql.NVarChar, '')
 		.input('plprinted', sql.Int, 0)
 		.input('weight', sql.Int, 0)
-		.input('memo', sql.NVarChar, '')
+		.input('memo', sql.NVarChar, reference)
 		.input('extmemo', sql.NVarChar, '')
 		.input('safeflag', sql.Int, 0)
 		.input('paritem', sql.NVarChar, '')
