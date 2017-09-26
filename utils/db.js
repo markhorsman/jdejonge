@@ -63,7 +63,8 @@ module.exports = {
 	findLatestContractByACCT: function(acct) {
 		return dbpool.request()
 		.input('acct', sql.NVarChar, acct)
-		.query('SELECT TOP 1 CONTNO, ESTRETD FROM dbo.Contracts WHERE ACCT = @acct AND CONTNO LIKE '00002%' ORDER BY CONTNO DESC')
+		.input('contno', sql.NVarChar, '00002%')
+		.query('SELECT TOP 1 CONTNO, ESTRETD FROM dbo.Contracts WHERE ACCT = @acct AND CONTNO LIKE @contno ORDER BY CONTNO DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
 	getContract: function(contno) {
