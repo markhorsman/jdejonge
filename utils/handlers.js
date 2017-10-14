@@ -30,7 +30,7 @@ module.exports = {
 					if (json.ITEMNO)
 						json.CONTITEM = contItem;
 
-					if (contItem)
+					if (contItem && contItem.MEMO === req.params.reference)
 						json.IN_RENT_BY_CUSTOMER = true;
 
 					respondJSON(res, next, json);	

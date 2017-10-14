@@ -92,7 +92,7 @@ module.exports = {
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
 		.input('acct', sql.NVarChar, acct)
-		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct ORDER BY CONTNO DESC')
+		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS, MEMO FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct ORDER BY CONTNO DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
 	// TODO: updateContItem method
