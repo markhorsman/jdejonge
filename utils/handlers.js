@@ -27,11 +27,12 @@ module.exports = {
 				db.findContItem(req.params.contno, req.params.itemno, req.params.acct).then((contItem) => {
 					json.IN_RENT_BY_CUSTOMER = false;
 
-					if (json.ITEMNO) {
+					if (json.ITEMNO)
 						json.CONTITEM = contItem;
-						json.IN_RENT_BY_CUSTOMER = true;	
-					} 	
-					
+
+					if (contItem)
+						json.IN_RENT_BY_CUSTOMER = true;
+
 					respondJSON(res, next, json);	
 				})	
 			})
