@@ -88,13 +88,12 @@ module.exports = {
 		.query('SELECT TOP 1 ROWORDER FROM dbo.ContItems WHERE dbo.ContItems.CONTNO = @contno ORDER BY ROWORDER DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0].ROWORDER : null); })
 	},
-	findContItem : function(contno, itemno, acct, reference) {
+	findContItem : function(contno, itemno, acct) {
 		return dbpool.request()
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
 		.input('acct', sql.NVarChar, acct)
-		.input('memo', sql.NText, reference)
-		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS, MEMO FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct AND MEMO = @memo ORDER BY CONTNO DESC')
+		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS, MEMO FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct ORDER BY CONTNO DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
 	// TODO: updateContItem method
