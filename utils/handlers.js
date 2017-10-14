@@ -25,7 +25,13 @@ module.exports = {
 		db.findStockItemByItemno(req.params.itemno)
 			.then((json) => {
 				db.findContItem(req.params.contno, req.params.itemno, req.params.acct).then((contItem) => {
-					if (json.ITEMNO) json.CONTITEM = contItem;	
+					json.IN_RENT_BY_CUSTOMER = false;
+
+					if (json.ITEMNO) {
+						json.CONTITEM = contItem;
+						json.IN_RENT_BY_CUSTOMER = true;	
+					} 	
+					
 					respondJSON(res, next, json);	
 				})	
 			})
