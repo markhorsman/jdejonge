@@ -53,12 +53,13 @@ module.exports = {
 		.input('itemno', sql.NVarChar, itemno)
 		.query('UPDATE dbo.Stock SET STATUS = @status WHERE ITEMNO = @itemno');
 	},
-	updateContItemStatus: function(contno, itemno, status) {
+	updateContItemStatus: function(contno, itemno, status, reference) {
 		return dbpool.request()
 		.input('status', sql.Int, parseInt(status))
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
-		.query('UPDATE dbo.ContItems SET STATUS = @status WHERE CONTNO = @contno AND ITEMNO = @itemno');
+		.input('memo', sql.NVarChar, reference)
+		.query('UPDATE dbo.ContItems SET STATUS = @status WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO = @memo');
 	},
 	findLatestContractByACCT: function(acct) {
 		return dbpool.request()

@@ -24,7 +24,7 @@ module.exports = {
 	getStockItem : function(req, res, next) {
 		db.findStockItemByItemno(req.params.itemno)
 			.then((json) => {
-				db.findContItem(req.params.contno, req.params.itemno, req.params.acct).then((contItem) => {
+				db.findContItem(req.params.contno, req.params.itemno, req.params.acct, req.params.reference).then((contItem) => {
 					json.IN_RENT_BY_CUSTOMER = false;
 
 					if (json.ITEMNO)
@@ -70,7 +70,7 @@ module.exports = {
 					return respondWithError(res, next,  "Updated van artikel status is mislukt.");
 				}	
 
-				db.updateContItemStatus(req.params.contno, req.params.itemno, 2).then((result) => {
+				db.updateContItemStatus(req.params.contno, req.params.itemno, 2, req.params.reference).then((result) => {
 					respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] });	
 				})
 			})
