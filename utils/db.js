@@ -58,7 +58,7 @@ module.exports = {
 		.input('status', sql.Int, parseInt(status))
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
-		.input('memo', sql.Text, reference)
+		.input('memo', sql.NText, reference)
 		.query('UPDATE dbo.ContItems SET STATUS = @status WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO = @memo');
 	},
 	findLatestContractByACCT: function(acct) {
@@ -93,7 +93,7 @@ module.exports = {
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
 		.input('acct', sql.NVarChar, acct)
-		.input('memo', sql.Text, reference)
+		.input('memo', sql.NText, reference)
 		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS, MEMO FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct AND MEMO = @memo ORDER BY CONTNO DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
