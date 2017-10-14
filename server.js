@@ -20,7 +20,7 @@ function listen() {
 
 	server.use(restify.plugins.bodyParser());
 	
-	server.get('/stock/:itemno/:contno/:acct', function(req, res, next) {
+	server.get('/stock/:itemno/:contno/:acct/:reference', function(req, res, next) {
 		basicAuth.authenticate(req, res, next, handlers.getStockItem);
 	 });
 
