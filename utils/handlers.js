@@ -64,6 +64,26 @@ module.exports = {
 		    return next();
 		}
 
+		const qty = parseInt(req.params.qty);
+
+		if (qty === 0 && req.body.UNIQUE === 0)
+			return respondWithError(res, next,  "Bulk artikel: geen aantal opgegeven.");
+
+		if (qty > req.body.CONTITEM.QTY) 
+			return respondWithError(res, next,  "Opgegeven aantal hoger dan aantal in huur.");
+
+		if (qty > 0 && qty < req.body.CONTITEM.QTY && req.body.UNIQUE == 0) {
+			// update contitem qty
+			return db.updateContItemQuantity(req.params.contno, req.params.itemno, qty, req.params.reference).then((result) => {
+					respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] });	
+				})
+				.catch((err) => {
+					console.log(err); 
+					respondWithError(res, next,  "Updated van artikel bulk aantal is mislukt.");
+				})
+			;
+		}
+
 		return db.updateStockItemStatus(req.params.itemno, req.body.STATUS)
 			.then((result) => {
 				if (!result || !result.rowsAffected) {
@@ -102,8 +122,6 @@ module.exports = {
 
 						const rent_period = getRentPeriod(estretd);
 
-						console.log(rent_period);
-	
 						if (typeof rent_period === 'undefined' || typeof rent_period.days === 'undefined' || rent_period.days < 0)
 							return respondWithError(res, next,  "Ongeldige contract periode");
 

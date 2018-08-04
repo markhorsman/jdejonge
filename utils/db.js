@@ -59,7 +59,15 @@ module.exports = {
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
 		.input('memo', sql.NText, reference)
-		.query('UPDATE dbo.ContItems SET STATUS = @status WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo');
+		.query('UPDATE dbo.ContItems SET STATUS = @status WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
+	},
+	updateContItemQuantity: function(contno, itemno, qty, reference) {
+		return dbpool.request()
+		.input('qty', sql.Int, parseInt(qty))
+		.input('contno', sql.NVarChar, contno)
+		.input('itemno', sql.NVarChar, itemno)
+		.input('memo', sql.NText, reference)
+		.query('UPDATE dbo.ContItems SET QTY = @qty WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
 	},
 	findLatestContractByACCT: function(acct) {
 		return dbpool.request()
@@ -94,7 +102,7 @@ module.exports = {
 		.input('itemno', sql.NVarChar, itemno)
 		.input('acct', sql.NVarChar, acct)
 		.input('memo', sql.NText, reference)
-		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS, MEMO FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct AND MEMO LIKE @memo ORDER BY CONTNO DESC')
+		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS, MEMO FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct AND MEMO LIKE @memo AND STATUS = 1 ORDER BY CONTNO DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
 	// TODO: updateContItem method
