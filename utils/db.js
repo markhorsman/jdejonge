@@ -61,12 +61,15 @@ module.exports = {
 		.query('UPDATE dbo.Stock SET STKLEVEL = STKLEVEL + @qty WHERE ITEMNO = @itemno');
 	},
 	updateContItemStatus: function(contno, itemno, status, reference) {
+		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
+
 		return dbpool.request()
 		.input('status', sql.Int, parseInt(status))
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
+		.input('docdate5', sql.NVarChar, dt)
 		.input('memo', sql.NText, reference)
-		.query('UPDATE dbo.ContItems SET STATUS = @status, QTYRETD = QTY WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
+		.query('UPDATE dbo.ContItems SET STATUS = @status, QTYRETD = QTY, DOCDATE#5 = @docdate5 WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
 	},
 	updateContItemQuantity: function(contno, itemno, qtyretd, reference) {
 		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
