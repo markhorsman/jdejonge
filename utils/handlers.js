@@ -64,18 +64,20 @@ module.exports = {
 		    return next();
 		}
 
-		const qty = parseInt(req.params.qty);
+		const qtyretd = parseInt(req.params.qty);
 
-		if (qty === 0 && req.body.UNIQUE === 0)
+		if (qtyretd === 0 && req.body.UNIQUE === 0)
 			return respondWithError(res, next,  "Bulk artikel: geen aantal opgegeven.");
 
-		if (qty > req.body.CONTITEM.QTY) 
+		if (qtyretd > req.body.CONTITEM.QTY) 
 			return respondWithError(res, next,  "Opgegeven aantal hoger dan aantal in huur.");
 
-		if (qty > 0 && qty < req.body.CONTITEM.QTY && req.body.UNIQUE == 0) {
+		if (qtyretd > 0 && qtyretd < req.body.CONTITEM.QTY && req.body.UNIQUE == 0) {
 			// update contitem qty
-			return db.updateContItemQuantity(req.params.contno, req.params.itemno, qty, req.params.reference).then((result) => {
-					respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] });	
+			return db.updateContItemQuantity(req.params.contno, req.params.itemno, qtyretd, req.params.reference).then((result) => {
+					return db.addStockItemLevel(req.params.itemno, qtyretd).then(result => {
+						respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] });	
+					});
 				})
 				.catch((err) => {
 					console.log(err); 
@@ -84,7 +86,7 @@ module.exports = {
 			;
 		}
 
-		return db.updateStockItemStatus(req.params.itemno, req.body.STATUS)
+		return db.updateStockItemStatus(req.params.itemno, req.body.STATUS, qtyretd, 'add')
 			.then((result) => {
 				if (!result || !result.rowsAffected) {
 					return respondWithError(res, next,  "Updated van artikel status is mislukt.");
@@ -139,7 +141,7 @@ module.exports = {
 							if (!result.rowsAffected[0]) return respondWithError(res, next,  "Opslaan van artikel contract item is mislukt.");
 
 							return db.updateContractTotals(contno, goods, vat, total).then((result) => {
-								return db.updateStockItemStatus(itemno, stockstatus)
+								return db.updateStockItemStatus(itemno, stockstatus, qty, 'sub')
 									.then((result) => { respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] }); })
 									.catch((err) => {
 										console.log(err); 

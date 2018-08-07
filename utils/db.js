@@ -45,13 +45,20 @@ module.exports = {
 
 		return dbpool.request()
 	    .input('itemno', sql.NVarChar, itemno.toLowerCase().replace(/\W/g, ''))
-	    .query('SELECT TOP 1 ' + stockPrefix + 'BARCODE, '+ stockPrefix + 'CALCODE, '+ stockPrefix + 'DESC#1 AS DESC1, '+ stockPrefix + 'DESC#2 AS DESC2, '+ stockPrefix + 'DESC#3 AS DESC3, '+ stockPrefix + 'ITEMNO, '+ stockPrefix + 'STATUS,' + stockPrefix + 'NLCODE, '+ stockPrefix + 'GRPCODE, '+ stockPrefix + 'VATCODE, '+ stockPrefix + 'DEFDEP, '+ stockPrefix + 'NLCC, ' + stockPrefix + '[UNIQUE], ' + ratesPrefix + 'CODE, '+ ratesPrefix + 'RATE#1 AS RATE1, '+ ratesPrefix + 'RATE#2 AS RATE2, '+ ratesPrefix + 'RATE#3 AS RATE3, '+ ratesPrefix + 'RATE#4 AS RATE4, '+ vatRatePrefix + 'VATRATE FROM dbo.Stock LEFT JOIN dbo.Rates ON dbo.Stock.ITEMNO = dbo.Rates.ITEMNO LEFT JOIN dbo.VatRates ON dbo.Stock.VATCODE = dbo.VatRates.CODE WHERE LOWER( '+ stockPrefix + 'ITEMNO) = @itemno').then(prepResult);
+	    .query('SELECT TOP 1 ' + stockPrefix + 'BARCODE, '+ stockPrefix + 'CALCODE, '+ stockPrefix + 'DESC#1 AS DESC1, '+ stockPrefix + 'DESC#2 AS DESC2, '+ stockPrefix + 'DESC#3 AS DESC3, '+ stockPrefix + 'ITEMNO, '+ stockPrefix + 'STATUS,' + stockPrefix + 'NLCODE, '+ stockPrefix + 'GRPCODE, '+ stockPrefix + 'VATCODE, '+ stockPrefix + 'DEFDEP, '+ stockPrefix + 'NLCC, ' + stockPrefix + 'STKLEVEL, ' + stockPrefix + '[UNIQUE], ' + ratesPrefix + 'CODE, '+ ratesPrefix + 'RATE#1 AS RATE1, '+ ratesPrefix + 'RATE#2 AS RATE2, '+ ratesPrefix + 'RATE#3 AS RATE3, '+ ratesPrefix + 'RATE#4 AS RATE4, '+ vatRatePrefix + 'VATRATE FROM dbo.Stock LEFT JOIN dbo.Rates ON dbo.Stock.ITEMNO = dbo.Rates.ITEMNO LEFT JOIN dbo.VatRates ON dbo.Stock.VATCODE = dbo.VatRates.CODE WHERE LOWER( '+ stockPrefix + 'ITEMNO) = @itemno').then(prepResult);
 	},
-	updateStockItemStatus: function(itemno, status) {
+	updateStockItemStatus: function(itemno, status, qty, operator) {
 		return dbpool.request()
 		.input('status', sql.Int, parseInt(status))
 		.input('itemno', sql.NVarChar, itemno)
-		.query('UPDATE dbo.Stock SET STATUS = @status WHERE ITEMNO = @itemno');
+		.input('qty', sql.Int, qty)
+		.query('UPDATE dbo.Stock SET STATUS = @status, STKLEVEL = STKLEVEL ' + (operator === 'sub' ? '-' : '+') + ' @qty WHERE ITEMNO = @itemno');
+	},
+	addStockItemLevel: function(itemno, qty) {
+		return dbpool.request()
+		.input('itemno', sql.NVarChar, itemno)
+		.input('qty', sql.Int, qty)
+		.query('UPDATE dbo.Stock SET STKLEVEL = STKLEVEL + @qty WHERE ITEMNO = @itemno');
 	},
 	updateContItemStatus: function(contno, itemno, status, reference) {
 		return dbpool.request()
@@ -59,15 +66,17 @@ module.exports = {
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
 		.input('memo', sql.NText, reference)
-		.query('UPDATE dbo.ContItems SET STATUS = @status WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
+		.query('UPDATE dbo.ContItems SET STATUS = @status, QTYRETD = QTY WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
 	},
-	updateContItemQuantity: function(contno, itemno, qty, reference) {
+	updateContItemQuantity: function(contno, itemno, qtyretd, reference) {
+		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
+		
 		return dbpool.request()
-		.input('qty', sql.Int, parseInt(qty))
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
+		.input('docdate5', sql.NVarChar, dt)
 		.input('memo', sql.NText, reference)
-		.query('UPDATE dbo.ContItems SET QTY = @qty WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
+		.query('UPDATE dbo.ContItems SET QTYRETD = ' + qtyretd + ', DOCDATE#5 = @docdate5 WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
 	},
 	findLatestContractByACCT: function(acct) {
 		return dbpool.request()
