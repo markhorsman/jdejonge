@@ -1,5 +1,6 @@
 const _			= require("lodash");
 const moment	= require("moment");
+const bb 		= require("bluebird");
 const db 		= require('./db');
 const errors 	= require('restify-errors');
 
@@ -44,12 +45,8 @@ module.exports = {
 	getCustomerContact : function(req, res, next) {
 		db.findCustomerContactByReference(req.params.reference)
 			.then((customerContact) => { 
-				return db.findLatestContractByACCT(customerContact.ACCT).then((contract) => { 
-					customerContact.CONTNO 		= null;
-					customerContact.ESTRETD 	= null;
-
-					if (contract) _.extend(customerContact, contract)
-					respondJSON(res, next, customerContact); 
+				return db.getActiveContractsByACCT(customerContact.ACCT).then((contracts) => { 
+					respondJSON(res, next, _.extend(customerContact, { CONTRACTS: contracts })); 
 				})  
 			})
 			.catch((err) => {
@@ -75,8 +72,12 @@ module.exports = {
 		if (qtyretd > 0 && qtyretd < req.body.CONTITEM.QTY && req.body.UNIQUE == 0) {
 			// update contitem qty
 			return db.updateContItemQuantity(req.params.contno, req.params.itemno, qtyretd, req.params.reference).then((result) => {
-					return db.addStockItemLevel(req.params.itemno, qtyretd).then(result => {
-						respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] });	
+					return bb.props({
+						stklevel: db.addStockItemLevel(req.params.itemno, qtyretd),
+						qtyhire: db.substractStockItemHire(req.params.itemno, qtyretd)
+					})
+					.then(result => {
+						respondJSON(res, next, { code: 200, status: !!result.stklevel.rowsAffected[0] });	
 					});
 				})
 				.catch((err) => {
@@ -86,9 +87,37 @@ module.exports = {
 			;
 		}
 
-		return db.updateStockItemStatus(req.params.itemno, req.body.STATUS, qtyretd, 'add')
+		if (req.body.UNIQUE != 0) {
+			return bb.props({
+				status: db.updateStockItemStatus(req.params.itemno, req.body.STATUS),
+				stklevel: db.addStockItemLevel(req.params.itemno, qtyretd),
+				qtyhire: db.substractStockItemHire(req.params.itemno, qtyretd)
+			})
+				.then((result) => {
+					if (!result || !result.status || !result.status.rowsAffected) {
+						return respondWithError(res, next,  "Updated van artikel status is mislukt.");
+					}	
+
+					db.updateContItemStatus(req.params.contno, req.params.itemno, 2, req.params.reference).then((result) => {
+						respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] });	
+					})
+				})
+				.catch((err) => {
+					console.log(err); 
+					respondWithError(res, next,  "Updated van artikel status is mislukt.");
+				} 
+			);
+		}
+
+		const qtyInHire = parseInt(req.body.QTYHIRE) - qtyretd;
+		
+		return bb.props({
+			stklevel: db.addStockItemLevel(req.params.itemno, qtyretd),
+			qtyhire: db.substractStockItemHire(req.params.itemno, qtyretd),
+			status: (qtyInHire <= 0 ? db.updateStockItemStatus(req.params.itemno, req.body.STATUS) : bb.resolve({ rowsAffected: 1 }))
+		})
 			.then((result) => {
-				if (!result || !result.rowsAffected) {
+				if (!result || !result.status || !result.status.rowsAffected) {
 					return respondWithError(res, next,  "Updated van artikel status is mislukt.");
 				}	
 
@@ -99,8 +128,8 @@ module.exports = {
 			.catch((err) => {
 				console.log(err); 
 				respondWithError(res, next,  "Updated van artikel status is mislukt.");
-			} 
-		);
+			})
+		;	
 	},
 	insertContItem: function(req, res, next) {
 		const itemno 		= req.params.itemno;
@@ -141,8 +170,12 @@ module.exports = {
 							if (!result.rowsAffected[0]) return respondWithError(res, next,  "Opslaan van artikel contract item is mislukt.");
 
 							return db.updateContractTotals(contno, goods, vat, total).then((result) => {
-								return db.updateStockItemStatus(itemno, stockstatus, qty, 'sub')
-									.then((result) => { respondJSON(res, next, { code: 200, status: !!result.rowsAffected[0] }); })
+								return bb.props({
+									status: db.updateStockItemStatus(itemno, stockstatus),
+									stklevel: db.substractStockItemLevel(itemno, qty),
+									qtyhire: db.addStockItemHire(itemno, qty)
+								})
+									.then((result) => { respondJSON(res, next, { code: 200, status: !!result.status.rowsAffected[0] }); })
 									.catch((err) => {
 										console.log(err); 
 										respondWithError(res, next,  "Opslaan van artikel status is mislukt.");

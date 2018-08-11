@@ -2,3 +2,10 @@ SQL Server Configuration Manager -->
 SQL Server Network Configuration --> 
 Protocols for SQLEXPRESS -->
 enable TCP/IP / add TCP port 1433 to IPALL
+
+130.1.200.215
+08STYG0001 (bulk)
+08LDDR0010
+
+Rekening houden met state over meerdere actieve scanners (ga niet altijd uit van data in memory van de app)
+Wanneer artikel is verhuurd aan ander contract/klant, contractnummer tonen in scherm/melding
