@@ -10,8 +10,7 @@ function respondJSON(res, next, msg) {
 	const code = msg.code;
 	delete msg.code;
 
-	console.log("sending response: %s", JSON.stringify(msg));
-
+	console.log("sending response: %s, code: %s", JSON.stringify(msg), code);
   	res.json(code, msg);
   	next();
 }
@@ -41,6 +40,17 @@ module.exports = {
 				console.log(err); 
 				respondWithError(res, next, "Ophalen van artikel is mislukt.") } 
 		);
+	},
+	getContItemsInRent: function(req, res, next) {
+		db.getContItemsInRent(req.params.reference)
+			.then((contItems) => { 
+				return respondJSON(res, next, { REFERENCE: req.params.reference, CONTITEMS: contItems, code: 200 });  
+			})
+			.catch((err) => {
+				console.log(err); 
+				respondWithError(res, next, "Ophalen van artikelen mislukt.") 
+			})
+		; 
 	},
 	getCustomerContact : function(req, res, next) {
 		db.findCustomerContactByReference(req.params.reference)
@@ -110,7 +120,7 @@ module.exports = {
 		}
 
 		const qtyInHire = parseInt(req.body.QTYHIRE) - qtyretd;
-		
+
 		return bb.props({
 			stklevel: db.addStockItemLevel(req.params.itemno, qtyretd),
 			qtyhire: db.substractStockItemHire(req.params.itemno, qtyretd),

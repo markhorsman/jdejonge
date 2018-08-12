@@ -97,7 +97,7 @@ module.exports = {
 		.input('itemno', sql.NVarChar, itemno)
 		.input('docdate5', sql.NVarChar, dt)
 		.input('memo', sql.NText, reference)
-		.query('UPDATE dbo.ContItems SET QTYRETD = ' + qtyretd + ', DOCDATE#5 = @docdate5 WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
+		.query('UPDATE dbo.ContItems SET QTYRETD = QTYRETD + ' + qtyretd + ', DOCDATE#5 = @docdate5 WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
 	},
 	getActiveContractsByACCT: function(acct) {
 		return dbpool.request()
@@ -142,11 +142,21 @@ module.exports = {
 		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS, MEMO FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct AND MEMO LIKE @memo AND STATUS = 1 ORDER BY CONTNO DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
-	countContItemsInRent : function(itemno) {
+	getContItemsInRent : function(reference) {
 		return dbpool.request()
-		.input('itemno', sql.NVarChar, itemno)
-		.query('SELECT COUNT(ITEMNO) AS total FROM dbo.ContItems WHERE ITEMNO = @itemno AND STATUS = 1')
-		.then((result) => { return (result.recordset.length && result.recordset[0].total ? result.recordset[0].total : 0); });
+		.input('memo', sql.NText, reference)
+		.query(`SELECT 
+					ContItems.RECID, ContItems.ITEMNO, ContItems.ITEMDESC, ContItems.QTY - ContItems.QTYRETD AS QTY, Contracts.THEIRREF
+				FROM 
+					dbo.ContItems
+				INNER JOIN 
+					Contracts ON ContItems.CONTNO = Contracts.CONTNO
+                WHERE 
+                	ContItems.MEMO LIKE @memo
+				AND 
+					ContItems.STATUS = 1
+				ORDER BY ContItems.HIREDATE ASC`)
+		.then((result) => { return (result.recordset.length ? result.recordset : []); });
 	},
 
 	// TODO: updateContItem method

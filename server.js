@@ -36,6 +36,10 @@ function listen() {
 		basicAuth.authenticate(req, res, next, handlers.insertContItem);	
 	})
 
+	server.get('/contitems/:reference', function(req, res, next) {
+		basicAuth.authenticate(req, res, next, handlers.getContItemsInRent);
+	 });
+
 	server.listen(config.api.port, function() {
 	  console.log('%s listening at %s', server.name, server.url);	  
 	});
