@@ -20,7 +20,7 @@ function listen() {
 
 	server.use(restify.plugins.bodyParser());
 	
-	server.get('/stock/:itemno/:contno/:acct/:reference', function(req, res, next) {
+	server.get('/stock/:itemno/:contno/:acct/:customername', function(req, res, next) {
 		basicAuth.authenticate(req, res, next, handlers.getStockItem);
 	 });
 
@@ -28,7 +28,7 @@ function listen() {
 		basicAuth.authenticate(req, res, next, handlers.getCustomerContact);
 	 });
 
-	server.put('/stock/status/:itemno/:contno/:reference/:qty', function(req, res, next) {
+	server.put('/stock/status/:itemno/:contno/:customername/:qty', function(req, res, next) {
 		basicAuth.authenticate(req, res, next, handlers.updateStockItemStatus);
 	})
 
@@ -36,7 +36,7 @@ function listen() {
 		basicAuth.authenticate(req, res, next, handlers.insertContItem);	
 	})
 
-	server.get('/contitems/:reference', function(req, res, next) {
+	server.get('/contitems/:customername', function(req, res, next) {
 		basicAuth.authenticate(req, res, next, handlers.getContItemsInRent);
 	 });
 

@@ -78,7 +78,7 @@ module.exports = {
 		.input('qty', sql.Int, qty)
 		.query('UPDATE dbo.Stock SET QTYHIRE = QTYHIRE - @qty WHERE ITEMNO = @itemno');
 	},
-	updateContItemStatus: function(contno, itemno, status, reference) {
+	updateContItemStatus: function(contno, itemno, status, customerName) {
 		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
 
 		return dbpool.request()
@@ -86,17 +86,17 @@ module.exports = {
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
 		.input('docdate5', sql.NVarChar, dt)
-		.input('memo', sql.NText, reference)
+		.input('memo', sql.NText, customerName)
 		.query('UPDATE dbo.ContItems SET STATUS = @status, QTYRETD = QTY, DOCDATE#5 = @docdate5 WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
 	},
-	updateContItemQuantity: function(contno, itemno, qtyretd, reference) {
+	updateContItemQuantity: function(contno, itemno, qtyretd, customerName) {
 		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
 		
 		return dbpool.request()
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
 		.input('docdate5', sql.NVarChar, dt)
-		.input('memo', sql.NText, reference)
+		.input('memo', sql.NText, customerName)
 		.query('UPDATE dbo.ContItems SET QTYRETD = QTYRETD + ' + qtyretd + ', DOCDATE#5 = @docdate5 WHERE CONTNO = @contno AND ITEMNO = @itemno AND MEMO LIKE @memo AND STATUS = 1');
 	},
 	getActiveContractsByACCT: function(acct) {
@@ -133,18 +133,18 @@ module.exports = {
 		.query('SELECT TOP 1 ROWORDER FROM dbo.ContItems WHERE dbo.ContItems.CONTNO = @contno ORDER BY ROWORDER DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0].ROWORDER : null); })
 	},
-	findContItem : function(contno, itemno, acct, reference) {
+	findContItem : function(contno, itemno, acct, customerName) {
 		return dbpool.request()
 		.input('contno', sql.NVarChar, contno)
 		.input('itemno', sql.NVarChar, itemno)
 		.input('acct', sql.NVarChar, acct)
-		.input('memo', sql.NText, reference)
+		.input('memo', sql.NText, customerName)
 		.query('SELECT TOP 1 CONTNO, ACCT, TYPE, ITEMNO, ITEMDESC, QTY, DISCOUNT, STATUS, MEMO FROM dbo.ContItems WHERE CONTNO = @contno AND ITEMNO = @itemno AND ACCT = @acct AND MEMO LIKE @memo AND STATUS = 1 ORDER BY CONTNO DESC')
 		.then((result) => { return (result.recordset.length ? result.recordset[0] : null); });
 	},
-	getContItemsInRent : function(reference) {
+	getContItemsInRent : function(customerName) {
 		return dbpool.request()
-		.input('memo', sql.NText, reference)
+		.input('memo', sql.NText, customerName)
 		.query(`SELECT 
 					ContItems.RECID, ContItems.ITEMNO, ContItems.ITEMDESC, ContItems.QTY - ContItems.QTYRETD AS QTY, Contracts.THEIRREF
 				FROM 
@@ -161,7 +161,7 @@ module.exports = {
 
 	// TODO: updateContItem method
 
-	insertContItem: function(acct, reference, contno, status, qty, roworder, estretd, charge, stockItem) {
+	insertContItem: function(acct, customerName, contno, status, qty, roworder, estretd, charge, stockItem) {
 		const dt = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
 
 		return dbpool.request()
@@ -238,7 +238,7 @@ module.exports = {
 		.input('prtflags', sql.NVarChar, '')
 		.input('plprinted', sql.Int, 0)
 		.input('weight', sql.Int, 0)
-		.input('memo', sql.NVarChar, reference)
+		.input('memo', sql.NVarChar, customerName)
 		.input('extmemo', sql.NVarChar, '')
 		.input('safeflag', sql.Int, 0)
 		.input('paritem', sql.NVarChar, '')
